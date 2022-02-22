@@ -3,7 +3,22 @@ from telegram.ext import Updater, CallbackContext, CommandHandler
 from telegram import Update
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from main import runMain
+
+
+def createLogFormat(numMessages):
+    if(numMessages == 1):
+        return "Log: 1 new message was sent at " + str(datetime.now())
+    elif(numMessages > 1):
+        return "Log: " + str(numMessages) + " new messages were sent at " + str(datetime.now())
+
+    return "Log: No new result was fetched at " + str(datetime.now())
+
+
 
 lastFetchedResult = ""
 
@@ -13,7 +28,7 @@ updater = Updater(
 )
 
 def start(update : Update, ctx : CallbackContext):
-    intervalInMinutes = 120
+    intervalInMinutes = 1
 
     ctx.bot.send_message(
         chat_id = update.effective_chat.id,
@@ -27,14 +42,16 @@ def start(update : Update, ctx : CallbackContext):
     )
 
 def resultFetcher(ctx : CallbackContext):
-    finalMessage, lastFetchedResult = runMain(lastFetchedResult)
-    if(finalMessage):
+    global lastFetchedResult
+    messages, lastFetchedResult = runMain(lastFetchedResult)
+
+    for message in messages:
         ctx.bot.send_message(
             chat_id = ctx.job.context,
-            text = finalMessage
+            text = message
         )
 
-    print("Log: New message was sent at " + str(datetime.now()))
+    print(createLogFormat(len(messages)))
 
 def live(update : Update, ctx : CallbackContext):
     ctx.bot.send_message(

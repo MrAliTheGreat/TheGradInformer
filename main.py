@@ -1,7 +1,10 @@
-from email import message
 import requests
 from bs4 import BeautifulSoup
+import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def fetchProgramInfo(result):
     uniInfo = result.h6.contents
@@ -17,13 +20,13 @@ def convertToMessageFormat(program, authorComment, dateAdded, includedDetails):
     return "\n..........\n".join([program, authorComment, dateAdded, includedDetails])
 
 def runMain(lastFetchedResult):
-    CS_URL = "https://www.thegradcafe.com/survey/?program=Computer+Science"
-
+    CS_URL = os.environ.get("TARGET_URL")
     siteHTML = BeautifulSoup(requests.get(CS_URL).text, features = "lxml")
 
+    lastResultFlag = True
+    messages = []
+
     for result in siteHTML.find_all("div", class_ = "row mb-2"):
-        lastResultFlag = True
-        finalMessage = ""
         if(result.find("h6")):
             program, authorComment = fetchProgramInfo(result)
             dateAdded = result.find("p", class_ = "mb-0 fst-italic").contents[0]
@@ -39,16 +42,13 @@ def runMain(lastFetchedResult):
             )
 
             if(message == lastFetchedResult):
-                return finalMessage, lastFetchedResult
+                return messages, lastFetchedResult
 
             if(lastResultFlag):
                 lastFetchedResult = message
                 lastResultFlag = False
 
-            finalMessage += (message + "\n\n")
+            messages.append(message)
     
-    return finalMessage, lastFetchedResult
+    return messages, lastFetchedResult
         
-        
-
-
